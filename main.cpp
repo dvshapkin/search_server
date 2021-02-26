@@ -469,7 +469,7 @@ public:
 private:
     struct QueryResult {
         string query;
-        bool isNoResult;
+        bool empty;
     };
     deque<QueryResult> requests_;
     const static int sec_in_day_ = 1440;
@@ -479,7 +479,7 @@ private:
 
     void UpdateRequests(const QueryResult& result) {
         requests_.push_back(result);
-        if (result.isNoResult) {
+        if (result.empty) {
             ++no_result_requests_;
         }
         RemoveOutdatedRequests();
@@ -488,7 +488,7 @@ private:
     void RemoveOutdatedRequests() {
         int64_t need_to_remove = static_cast<int64_t>(requests_.size()) - sec_in_day_;
         while (need_to_remove > 0) {
-            if (requests_.front().isNoResult) {
+            if (requests_.front().empty) {
                 --no_result_requests_;
             }
             requests_.pop_front();
