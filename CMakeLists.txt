@@ -5,4 +5,10 @@ project(final_sprint_4 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(final_sprint_4 main.cpp)
+add_executable(final_sprint_4
+    main.cpp
+    utils.h utils.cpp
+    document.h document.cpp
+    searchserver.h searchserver.cpp
+    requestqueue.h requestqueue.cpp
+    paginator.h)
