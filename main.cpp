@@ -16,6 +16,8 @@
 #include "requestqueue.h"
 #include "paginator.h"
 
+#include "log_duration.h"
+
 using namespace std;
 
 void PrintDocument(const Document& document) {
@@ -48,6 +50,7 @@ void AddDocument(SearchServer& search_server, int document_id, const string& doc
 void FindTopDocuments(const SearchServer& search_server, const string& raw_query) {
     cout << "Результаты поиска по запросу: "s << raw_query << endl;
     try {
+        LOG_DURATION_STREAM("Operation time"s, std::cout);
         for (const Document& document : search_server.FindTopDocuments(raw_query)) {
             PrintDocument(document);
         }
@@ -59,6 +62,7 @@ void FindTopDocuments(const SearchServer& search_server, const string& raw_query
 void MatchDocuments(const SearchServer& search_server, const string& query) {
     try {
         cout << "Матчинг документов по запросу: "s << query << endl;
+        LOG_DURATION_STREAM("Operation time"s, std::cout);
         const int document_count = search_server.GetDocumentCount();
         for (int index = 0; index < document_count; ++index) {
             const int document_id = search_server.GetDocumentId(index);

@@ -11,4 +11,5 @@ add_executable(final_sprint_4
     document.h document.cpp
     searchserver.h searchserver.cpp
     requestqueue.h requestqueue.cpp
-    paginator.h)
+    paginator.h
+    log_duration.h)
