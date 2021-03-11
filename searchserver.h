@@ -17,6 +17,8 @@ const int MAX_RESULT_DOCUMENT_COUNT = 5;
 
 class SearchServer {
 public:
+    using const_iterator = std::vector<int>::const_iterator;
+
     template <typename StringContainer>
     explicit SearchServer(const StringContainer& stop_words)
         : stop_words_(MakeUniqueNonEmptyStrings(stop_words))  // Extract non-empty stop words
@@ -61,7 +63,10 @@ public:
 
     int GetDocumentCount() const;
 
-    int GetDocumentId(int index) const;
+    //int GetDocumentId(int index) const;
+    SearchServer::const_iterator begin();
+
+    SearchServer::const_iterator end();
 
     std::tuple<std::vector<std::string>, DocumentStatus> MatchDocument(const std::string& raw_query, int document_id) const;
 

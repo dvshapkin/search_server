@@ -33,8 +33,16 @@ int SearchServer::GetDocumentCount() const {
     return documents_.size();
 }
 
-int SearchServer::GetDocumentId(int index) const {
-    return document_ids_.at(index);
+//int SearchServer::GetDocumentId(int index) const {
+//    return document_ids_.at(index);
+//}
+
+SearchServer::const_iterator SearchServer::begin() {
+    return document_ids_.begin();
+}
+
+SearchServer::const_iterator SearchServer::end() {
+    return document_ids_.end();
 }
 
 std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument(const std::string& raw_query, int document_id) const {
