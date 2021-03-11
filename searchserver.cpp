@@ -33,18 +33,6 @@ int SearchServer::GetDocumentCount() const {
     return documents_.size();
 }
 
-//int SearchServer::GetDocumentId(int index) const {
-//    return document_ids_.at(index);
-//}
-
-SearchServer::const_iterator SearchServer::begin() {
-    return document_ids_.begin();
-}
-
-SearchServer::const_iterator SearchServer::end() {
-    return document_ids_.end();
-}
-
 std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument(const std::string& raw_query, int document_id) const {
     const auto query = ParseQuery(raw_query);
 
@@ -68,3 +56,43 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
     }
     return {matched_words, documents_.at(document_id).status};
 }
+
+SearchServer::const_iterator SearchServer::begin() const {
+    return document_ids_.begin();
+}
+
+SearchServer::const_iterator SearchServer::end() const {
+    return document_ids_.end();
+}
+
+const std::map<std::string, double>& SearchServer::GetWordFrequencies(int document_id) const {
+    std::map<std::string, double> result;
+    if (documents_.count(document_id) > 0) {
+        for (const auto& [word, id_to_freqs]: word_to_document_freqs_) {
+            if (id_to_freqs.count(document_id) > 0) {
+                result[word] = id_to_freqs.at(document_id);
+            }
+        }
+    }
+    return result;
+}
+
+void SearchServer::RemoveDocument(int document_id) {
+    documents_.erase(document_id);
+    remove(document_ids_.begin(), document_ids_.end(), document_id);
+    for (auto& [word, id_to_freqs]: word_to_document_freqs_) {
+        if (id_to_freqs.count(document_id) > 0) {
+            id_to_freqs.erase(document_id);
+            if (id_to_freqs.empty()) {
+                word_to_document_freqs_.erase(word);
+            }
+        }
+    }
+}
+
+void RemoveDuplicates(SearchServer& search_server) {
+    for (const int document_id: search_server) {
+        // TODO
+    }
+}
+

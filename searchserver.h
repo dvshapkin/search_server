@@ -63,12 +63,15 @@ public:
 
     int GetDocumentCount() const;
 
-    //int GetDocumentId(int index) const;
-    SearchServer::const_iterator begin();
-
-    SearchServer::const_iterator end();
-
     std::tuple<std::vector<std::string>, DocumentStatus> MatchDocument(const std::string& raw_query, int document_id) const;
+
+    SearchServer::const_iterator begin() const;
+
+    SearchServer::const_iterator end() const;
+
+    const std::map<std::string, double>& GetWordFrequencies(int document_id) const;
+
+    void RemoveDocument(int document_id);
 
 private:
     struct DocumentData {
@@ -198,3 +201,6 @@ private:
         return matched_documents;
     }
 };
+
+void RemoveDuplicates(SearchServer& search_server);
+
