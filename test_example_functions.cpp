@@ -47,7 +47,7 @@ void MatchDocuments(const SearchServer& search_server, const string& query) {
     try {
         cout << "Матчинг документов по запросу: "s << query << endl;
         LOG_DURATION_STREAM("Operation time"s, std::cout);
-        for (const auto [document_id,_]: search_server) {
+        for (const int document_id: search_server) {
             const auto [words, status] = search_server.MatchDocument(query, document_id);
             PrintMatchDocumentResult(document_id, words, status);
         }

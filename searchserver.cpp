@@ -10,10 +10,10 @@ void SearchServer::AddDocument(int document_id, const std::string& document, Doc
 
     const double inv_word_count = 1.0 / words.size();
     for (const string& word : words) {
-        if (word_to_document_freqs_[word].count(document_id) == 0) {
-            word_to_document_freqs_[word][document_id] = 0;
-        }
-        word_to_document_freqs_[word][document_id] += inv_word_count;
+//        if (word_to_document_freqs_[word].count(document_id) == 0) {
+//            word_to_document_freqs_[word][document_id] = 0;
+//        }
+//        word_to_document_freqs_[word][document_id] += inv_word_count;
 
         if (document_to_word_freqs_[document_id].count(word) == 0) {
             document_to_word_freqs_[document_id][word] = 0;
@@ -21,7 +21,8 @@ void SearchServer::AddDocument(int document_id, const std::string& document, Doc
         document_to_word_freqs_[document_id][word] += inv_word_count;
     }
     documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
-    //document_ids_.push_back(document_id);
+
+    document_ids_.insert(document_id);
 }
 
 std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_query, const DocumentStatus& status) const {
@@ -80,11 +81,11 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
 }
 
 SearchServer::const_iterator SearchServer::begin() const {
-    return documents_.begin();
+    return document_ids_.begin();
 }
 
 SearchServer::const_iterator SearchServer::end() const {
-    return documents_.end();
+    return document_ids_.end();
 }
 
 const std::map<std::string, double>& SearchServer::GetWordFrequencies(int document_id) const {
@@ -92,13 +93,7 @@ const std::map<std::string, double>& SearchServer::GetWordFrequencies(int docume
 }
 
 void SearchServer::RemoveDocument(int document_id) {
+    document_ids_.erase(document_id);
     documents_.erase(document_id);
-    for (auto& [word, id_to_freqs]: word_to_document_freqs_) {
-        if (id_to_freqs.count(document_id) > 0) {
-            id_to_freqs.erase(document_id);
-            if (id_to_freqs.empty()) {
-                word_to_document_freqs_.erase(word);
-            }
-        }
-    }
+    document_to_word_freqs_.erase(document_id);
 }
