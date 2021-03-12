@@ -7,9 +7,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(sprint_5
     main.cpp
-    utils.h utils.cpp
+    read_input_functions.h read_input_functions.cpp
+    string_processing.h string_processing.cpp
     document.h document.cpp
     searchserver.h searchserver.cpp
     requestqueue.h requestqueue.cpp
+    remove_duplicates.h remove_duplicates.cpp
+    test_example_functions.h test_example_functions.cpp
     paginator.h
     log_duration.h)

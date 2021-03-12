@@ -102,10 +102,3 @@ void SearchServer::RemoveDocument(int document_id) {
         }
     }
 }
-
-void RemoveDuplicates(SearchServer& search_server) {
-    for (const auto [document_id,_]: search_server) {
-        // TODO
-    }
-}
-

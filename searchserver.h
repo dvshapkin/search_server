@@ -8,8 +8,9 @@
 #include <map>
 #include <set>
 
-#include "utils.h"
+#include "read_input_functions.h"
 #include "document.h"
+#include "string_processing.h"
 
 using namespace std::literals::string_literals;
 
@@ -204,6 +205,3 @@ private:
         return matched_documents;
     }
 };
-
-void RemoveDuplicates(SearchServer& search_server);
-
