@@ -14,9 +14,14 @@ void SearchServer::AddDocument(int document_id, const std::string& document, Doc
             word_to_document_freqs_[word][document_id] = 0;
         }
         word_to_document_freqs_[word][document_id] += inv_word_count;
+
+        if (document_to_word_freqs_[document_id].count(word) == 0) {
+            document_to_word_freqs_[document_id][word] = 0;
+        }
+        document_to_word_freqs_[document_id][word] += inv_word_count;
     }
     documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
-    document_ids_.push_back(document_id);
+    //document_ids_.push_back(document_id);
 }
 
 std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_query, const DocumentStatus& status) const {
@@ -58,28 +63,19 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
 }
 
 SearchServer::const_iterator SearchServer::begin() const {
-    return document_ids_.begin();
+    return documents_.begin();
 }
 
 SearchServer::const_iterator SearchServer::end() const {
-    return document_ids_.end();
+    return documents_.end();
 }
 
 const std::map<std::string, double>& SearchServer::GetWordFrequencies(int document_id) const {
-    std::map<std::string, double> result;
-    if (documents_.count(document_id) > 0) {
-        for (const auto& [word, id_to_freqs]: word_to_document_freqs_) {
-            if (id_to_freqs.count(document_id) > 0) {
-                result[word] = id_to_freqs.at(document_id);
-            }
-        }
-    }
-    return result;
+    return document_to_word_freqs_.at(document_id);
 }
 
 void SearchServer::RemoveDocument(int document_id) {
     documents_.erase(document_id);
-    remove(document_ids_.begin(), document_ids_.end(), document_id);
     for (auto& [word, id_to_freqs]: word_to_document_freqs_) {
         if (id_to_freqs.count(document_id) > 0) {
             id_to_freqs.erase(document_id);
@@ -91,7 +87,7 @@ void SearchServer::RemoveDocument(int document_id) {
 }
 
 void RemoveDuplicates(SearchServer& search_server) {
-    for (const int document_id: search_server) {
+    for (const auto [document_id,_]: search_server) {
         // TODO
     }
 }
