@@ -42,19 +42,36 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
     const auto query = ParseQuery(raw_query);
 
     vector<string> matched_words;
+//    for (const string& word : query.plus_words) {
+//        if (word_to_document_freqs_.count(word) == 0) {
+//            continue;
+//        }
+//        if (word_to_document_freqs_.at(word).count(document_id)) {
+//            matched_words.push_back(word);
+//        }
+//    }
+//    for (const string& word : query.minus_words) {
+//        if (word_to_document_freqs_.count(word) == 0) {
+//            continue;
+//        }
+//        if (word_to_document_freqs_.at(word).count(document_id)) {
+//            matched_words.clear();
+//            break;
+//        }
+//    }
     for (const string& word : query.plus_words) {
-        if (word_to_document_freqs_.count(word) == 0) {
+        if (document_to_word_freqs_.count(document_id) == 0) {
             continue;
         }
-        if (word_to_document_freqs_.at(word).count(document_id)) {
+        if (document_to_word_freqs_.at(document_id).count(word)) {
             matched_words.push_back(word);
         }
     }
     for (const string& word : query.minus_words) {
-        if (word_to_document_freqs_.count(word) == 0) {
+        if (document_to_word_freqs_.count(document_id) == 0) {
             continue;
         }
-        if (word_to_document_freqs_.at(word).count(document_id)) {
+        if (document_to_word_freqs_.at(document_id).count(word)) {
             matched_words.clear();
             break;
         }
