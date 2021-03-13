@@ -33,7 +33,6 @@ private:
     };
     std::deque<QueryResult> requests_;
     const static int sec_in_day_ = 1440;
-    // возможно, здесь вам понадобится что-то ещё
     const SearchServer& search_server_;
     int no_result_requests_ = 0;
 

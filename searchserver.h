@@ -24,7 +24,6 @@ private:
     };
 public:
     using const_iterator = std::set<int>::const_iterator;
-    //using const_iterator = std::map<int, DocumentData>::const_iterator;
 
     template <typename StringContainer>
     explicit SearchServer(const StringContainer& stop_words)
@@ -82,7 +81,6 @@ public:
 
 private:
     const std::set<std::string> stop_words_;
-    //std::map<std::string, std::map<int, double>> word_to_document_freqs_;
     std::map<int, std::map<std::string, double>> document_to_word_freqs_;
     std::map<int, DocumentData> documents_;
     std::set<int> document_ids_;
@@ -167,7 +165,6 @@ private:
 
     // Existence required
     double ComputeWordInverseDocumentFreq(const std::string& word) const {
-        //return std::log(GetDocumentCount() * 1.0 / word_to_document_freqs_.at(word).size());
         int doc_count = 0;
         for (const auto& [document_id, word_freqs] : document_to_word_freqs_) {
             if (word_freqs.count(word) > 0) {
@@ -181,19 +178,7 @@ private:
     std::vector<Document> FindAllDocuments(const Query& query, const DocumentPredicate& document_predicate) const {
         std::map<int, double> document_to_relevance;
         for (const std::string& word : query.plus_words) {
-//            if (word_to_document_freqs_.count(word) == 0) {
-//                continue;
-//            }
             const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
-//            for (const auto [document_id, term_freq] : word_to_document_freqs_.at(word)) {
-//                const auto& document_data = documents_.at(document_id);
-//                if (document_predicate(document_id, document_data.status, document_data.rating)) {
-//                    if (document_to_relevance.count(document_id) == 0) {
-//                        document_to_relevance[document_id] = 0;
-//                    }
-//                    document_to_relevance[document_id] += term_freq * inverse_document_freq;
-//                }
-//            }
             for (const auto& [document_id, word_freqs] : document_to_word_freqs_) {
                 if (word_freqs.count(word) == 0) {
                     continue;
@@ -208,14 +193,6 @@ private:
             }
         }
 
-//        for (const std::string& word : query.minus_words) {
-//            if (word_to_document_freqs_.count(word) == 0) {
-//                continue;
-//            }
-//            for (const auto [document_id, _] : word_to_document_freqs_.at(word)) {
-//                document_to_relevance.erase(document_id);
-//            }
-//        }
         for (const std::string& word : query.minus_words) {
             for (const auto& [document_id, word_freqs] : document_to_word_freqs_) {
                 if (word_freqs.count(word) == 0) {
