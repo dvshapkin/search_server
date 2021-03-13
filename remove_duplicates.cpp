@@ -5,7 +5,7 @@
 using namespace std;
 
 template<typename StringKeyMap>
-set<string> KeySetOf(const StringKeyMap& m) {
+set<string> GetKeySet(const StringKeyMap& m) {
     set<string> keys;
     for (const auto& item: m) {
         keys.insert(item.first);
@@ -14,11 +14,11 @@ set<string> KeySetOf(const StringKeyMap& m) {
 }
 
 template<typename StringKeyMap>
-bool EqualityByKeys(const StringKeyMap& lhs, const StringKeyMap& rhs) {
+bool AreEqualByKeys(const StringKeyMap& lhs, const StringKeyMap& rhs) {
     if (lhs.size() != rhs.size()) {
         return false;
     }
-    return KeySetOf(lhs) == KeySetOf(rhs);
+    return GetKeySet(lhs) == GetKeySet(rhs);
 }
 
 void RemoveDuplicates(SearchServer& search_server) {
@@ -26,7 +26,7 @@ void RemoveDuplicates(SearchServer& search_server) {
 
     for (auto lhs = search_server.begin(); lhs != search_server.end(); ++lhs) {
         for (auto rhs = next(lhs, 1); rhs != search_server.end(); ++rhs) {
-            if (EqualityByKeys(search_server.GetWordFrequencies(*lhs), search_server.GetWordFrequencies(*rhs))) {
+            if (AreEqualByKeys(search_server.GetWordFrequencies(*lhs), search_server.GetWordFrequencies(*rhs))) {
                 duplicates.insert(*rhs);
             }
         }
