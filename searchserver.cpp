@@ -10,11 +10,6 @@ void SearchServer::AddDocument(int document_id, const std::string& document, Doc
 
     const double inv_word_count = 1.0 / words.size();
     for (const string& word : words) {
-//        if (word_to_document_freqs_[word].count(document_id) == 0) {
-//            word_to_document_freqs_[word][document_id] = 0;
-//        }
-//        word_to_document_freqs_[word][document_id] += inv_word_count;
-
         if (document_to_word_freqs_[document_id].count(word) == 0) {
             document_to_word_freqs_[document_id][word] = 0;
         }
@@ -43,23 +38,7 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
     const auto query = ParseQuery(raw_query);
 
     vector<string> matched_words;
-//    for (const string& word : query.plus_words) {
-//        if (word_to_document_freqs_.count(word) == 0) {
-//            continue;
-//        }
-//        if (word_to_document_freqs_.at(word).count(document_id)) {
-//            matched_words.push_back(word);
-//        }
-//    }
-//    for (const string& word : query.minus_words) {
-//        if (word_to_document_freqs_.count(word) == 0) {
-//            continue;
-//        }
-//        if (word_to_document_freqs_.at(word).count(document_id)) {
-//            matched_words.clear();
-//            break;
-//        }
-//    }
+
     for (const string& word : query.plus_words) {
         if (document_to_word_freqs_.count(document_id) == 0) {
             continue;

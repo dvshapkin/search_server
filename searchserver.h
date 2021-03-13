@@ -3,6 +3,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
+#include <numeric>
 #include <utility>
 #include <vector>
 #include <map>
@@ -113,10 +114,7 @@ private:
         if (ratings.empty()) {
             return 0;
         }
-        int rating_sum = 0;
-        for (const int rating : ratings) {
-            rating_sum += rating;
-        }
+        int rating_sum = accumulate(ratings.begin(), ratings.end(), 0);
         return rating_sum / static_cast<int>(ratings.size());
     }
 
@@ -165,12 +163,12 @@ private:
 
     // Existence required
     double ComputeWordInverseDocumentFreq(const std::string& word) const {
-        int doc_count = 0;
-        for (const auto& [document_id, word_freqs] : document_to_word_freqs_) {
-            if (word_freqs.count(word) > 0) {
-                ++doc_count;
-            }
-        }
+        int doc_count = count_if(
+                    document_to_word_freqs_.cbegin(),
+                    document_to_word_freqs_.cend(),
+                    [word](const auto item){
+                        return item.second.count(word) > 0;
+                    });
         return std::log(GetDocumentCount() * 1.0 / doc_count);
     }
 
@@ -193,7 +191,7 @@ private:
             }
         }
 
-        for (const std::string& word : query.minus_words) {
+         for (const std::string& word : query.minus_words) {
             for (const auto& [document_id, word_freqs] : document_to_word_freqs_) {
                 if (word_freqs.count(word) == 0) {
                     continue;

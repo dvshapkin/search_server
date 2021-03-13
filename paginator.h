@@ -8,7 +8,7 @@
 template <typename Iterator>
 class IteratorRange {
 public:
-    IteratorRange(Iterator begin, Iterator end)
+    IteratorRange(const Iterator& begin, const Iterator& end)
         : first_(begin)
         , last_(end)
         , size_(std::distance(first_, last_)) {
@@ -42,7 +42,7 @@ std::ostream& operator<<(std::ostream& out, const IteratorRange<Iterator>& range
 template <typename Iterator>
 class Paginator {
 public:
-    Paginator(Iterator begin, Iterator end, size_t page_size) {
+    Paginator(const Iterator& begin, const Iterator& end, size_t page_size) {
         for (size_t left = std::distance(begin, end); left > 0;) {
             const size_t current_page_size = std::min(page_size, left);
             const Iterator current_page_end = std::next(begin, current_page_size);
