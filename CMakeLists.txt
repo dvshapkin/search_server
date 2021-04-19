@@ -1,11 +1,10 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.19)
 
-project(sprint_5 LANGUAGES CXX)
+project(search_server)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(sprint_5
+add_executable(search_server
     main.cpp
     read_input_functions.h read_input_functions.cpp
     string_processing.h string_processing.cpp
