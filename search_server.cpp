@@ -31,7 +31,7 @@ std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_quer
 }
 
 int SearchServer::GetDocumentCount() const {
-    return documents_.size();
+    return document_ids_.size();
 }
 
 std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument(const std::string& raw_query, int document_id) const {
@@ -75,4 +75,46 @@ void SearchServer::RemoveDocument(int document_id) {
     document_ids_.erase(document_id);
     documents_.erase(document_id);
     document_to_word_freqs_.erase(document_id);
+}
+
+void SearchServer::RemoveDocument(const std::execution::sequenced_policy &policy, int document_id) {
+    RemoveDocument(document_id);
+}
+
+void SearchServer::RemoveDocument(const std::execution::parallel_policy &policy, int document_id) {
+    // Удаление из document_ids_
+    {
+        std::vector<int> v(document_ids_.size());
+        std::move(policy, document_ids_.begin(), document_ids_.end(), v.begin());
+        std::remove(policy, v.begin(), v.end(), document_id);
+
+        std::set<int> temp(v.begin(), v.end());
+        document_ids_.swap(temp);
+    }
+
+    // Удаление из documents_
+    {
+        std::vector<std::pair<int, DocumentData>> v(documents_.size());
+        std::move(policy, documents_.begin(), documents_.end(), v.begin());
+        std::remove_if(policy, v.begin(), v.end(),
+                       [document_id](const auto &item) { return item.first == document_id; });
+
+        std::map<int, DocumentData> temp(v.begin(), v.end());
+        documents_.swap(temp);
+    }
+
+    // Удаление из document_to_word_freqs_
+    {
+        std::vector<std::pair<int, std::map<std::string, double>>> v(document_to_word_freqs_.size());
+        std::move(policy, document_to_word_freqs_.begin(), document_to_word_freqs_.end(), v.begin());
+        std::remove_if(policy, v.begin(), v.end(),
+                       [document_id](const auto &item) { return item.first == document_id; });
+
+        std::map<int, std::map<std::string, double>> temp(v.begin(), v.end());
+        document_to_word_freqs_.swap(temp);
+    }
+
+    //std::remove(std::execution::par, document_ids_.begin(), document_ids_.end(), document_id);
+    //std::remove(std::execution::par, documents_.begin(), documents_.end(), document_id);
+    //std::remove(std::move(policy), document_to_word_freqs_.begin(), document_to_word_freqs_.end(), document_id);
 }
