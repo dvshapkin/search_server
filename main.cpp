@@ -1,5 +1,5 @@
-#include "searchserver.h"
-#include "requestqueue.h"
+#include "search_server.h"
+#include "request_queue.h"
 #include "test_example_functions.h"
 #include "remove_duplicates.h"
 #include "paginator.h"

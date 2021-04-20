@@ -8,8 +8,8 @@ add_executable(search_server
     read_input_functions.h read_input_functions.cpp
     string_processing.h string_processing.cpp
     document.h document.cpp
-    searchserver.h searchserver.cpp
-    requestqueue.h requestqueue.cpp
+        search_server.h search_server.cpp
+        request_queue.h request_queue.cpp
     remove_duplicates.h remove_duplicates.cpp
     test_example_functions.h test_example_functions.cpp
     paginator.h

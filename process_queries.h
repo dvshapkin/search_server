@@ -2,7 +2,7 @@
 
 #include <vector>
 #include "document.h"
-#include "searchserver.h"
+#include "search_server.h"
 
 std::vector<std::vector<Document>> ProcessQueries(
         const SearchServer& search_server,

@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "document.h"
-#include "searchserver.h"
+#include "search_server.h"
 
 void PrintDocument(const Document& document);
 
