@@ -73,13 +73,13 @@ public:
     int GetDocumentCount() const;
 
     std::tuple<std::vector<std::string>, DocumentStatus>
-    MatchDocument(const std::string &raw_query, int document_id) const;
+    MatchDocument(const std::string_view raw_query, int document_id) const;
 
     std::tuple<std::vector<std::string>, DocumentStatus>
-    MatchDocument(const std::execution::sequenced_policy &policy, const std::string &raw_query, int document_id) const;
+    MatchDocument(const std::execution::sequenced_policy &policy, const std::string_view raw_query, int document_id) const;
 
     std::tuple<std::vector<std::string>, DocumentStatus>
-    MatchDocument(const std::execution::parallel_policy &policy, const std::string &raw_query, int document_id) const;
+    MatchDocument(const std::execution::parallel_policy &policy, const std::string_view raw_query, int document_id) const;
 
     SearchServer::const_iterator begin() const;
 
@@ -151,7 +151,7 @@ private:
             throw std::invalid_argument("Query word "s + text + " is invalid");
         }
 
-        return {word, is_minus, IsStopWord(word)};
+        return {std::move(word), is_minus, IsStopWord(word)};
     }
 
     struct Query {
@@ -165,9 +165,9 @@ private:
             const auto query_word = ParseQueryWord(word);
             if (!query_word.is_stop) {
                 if (query_word.is_minus) {
-                    result.minus_words.insert(query_word.data);
+                    result.minus_words.insert(std::move(query_word.data));
                 } else {
-                    result.plus_words.insert(query_word.data);
+                    result.plus_words.insert(std::move(query_word.data));
                 }
             }
         }

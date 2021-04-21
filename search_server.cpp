@@ -34,7 +34,7 @@ int SearchServer::GetDocumentCount() const {
     return document_ids_.size();
 }
 
-std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument(const std::string& raw_query, int document_id) const {
+std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument(const std::string_view raw_query, int document_id) const {
     const auto query = ParseQuery(raw_query);
 
     vector<string> matched_words;
@@ -44,7 +44,7 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
             continue;
         }
         if (document_to_word_freqs_.at(document_id).count(word)) {
-            matched_words.push_back(word);
+            matched_words.push_back(std::move(word));
         }
     }
     for (const string& word : query.minus_words) {
@@ -60,12 +60,12 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
 }
 
 std::tuple<std::vector<std::string>, DocumentStatus>
-SearchServer::MatchDocument(const std::execution::sequenced_policy &policy, const std::string &raw_query, int document_id) const {
+SearchServer::MatchDocument(const std::execution::sequenced_policy &policy, const std::string_view raw_query, int document_id) const {
     return MatchDocument(raw_query, document_id);
 }
 
 std::tuple<std::vector<std::string>, DocumentStatus>
-SearchServer::MatchDocument(const std::execution::parallel_policy &policy, const std::string &raw_query, int document_id) const {
+SearchServer::MatchDocument(const std::execution::parallel_policy &policy, const std::string_view raw_query, int document_id) const {
     const auto query = ParseQuery(raw_query);
 
     vector<string> matched_words;
