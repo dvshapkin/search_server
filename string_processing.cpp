@@ -8,7 +8,7 @@ std::vector<std::string> SplitIntoWords(const std::string_view text) {
     for (const char c : text) {
         if (c == ' ') {
             if (!word.empty()) {
-                words.push_back(word);
+                words.push_back(std::move(word));
                 word.clear();
             }
         } else {
@@ -16,7 +16,7 @@ std::vector<std::string> SplitIntoWords(const std::string_view text) {
         }
     }
     if (!word.empty()) {
-        words.push_back(word);
+        words.push_back(std::move(word));
     }
 
     return words;

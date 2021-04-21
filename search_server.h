@@ -117,7 +117,7 @@ private:
                 throw std::invalid_argument("Word "s + word + " is invalid"s);
             }
             if (!IsStopWord(word)) {
-                words.push_back(word);
+                words.push_back(std::move(word));
             }
         }
         return words;
