@@ -94,20 +94,6 @@ public:
 
     void RemoveDocument(const std::execution::parallel_policy &policy, int document_id);
 
-//    template <typename ExecutionPolicy>
-//    void RemoveDocument(ExecutionPolicy&& policy, int document_id) {
-//        if (policy == std::execution::seq) {
-//            RemoveDocument(document_id);
-//        } else {
-//            //document_ids_.erase(document_id);
-//            std::remove(std::move(policy), document_ids_.begin(), document_ids_.end(), document_id);
-//            //documents_.erase(document_id);
-//            std::remove(std::move(policy), documents_.begin(), documents_.end(), document_id);
-//            //document_to_word_freqs_.erase(document_id);
-//            std::remove(std::move(policy), document_to_word_freqs_.begin(), document_to_word_freqs_.end(), document_id);
-//        }
-//    }
-
 private:
     const std::set<std::string> stop_words_;
     std::map<int, std::map<std::string, double>> document_to_word_freqs_;
