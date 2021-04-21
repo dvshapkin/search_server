@@ -46,7 +46,7 @@ public:
 
     template<typename DocumentPredicate>
     std::vector<Document>
-    FindTopDocuments(const std::string &raw_query, const DocumentPredicate &document_predicate) const {
+    FindTopDocuments(const std::string_view raw_query, const DocumentPredicate &document_predicate) const {
         const auto query = ParseQuery(raw_query);
 
         auto matched_documents = FindAllDocuments(query, document_predicate);
@@ -66,9 +66,9 @@ public:
         return matched_documents;
     }
 
-    std::vector<Document> FindTopDocuments(const std::string &raw_query, const DocumentStatus &status) const;
+    std::vector<Document> FindTopDocuments(const std::string_view raw_query, const DocumentStatus &status) const;
 
-    std::vector<Document> FindTopDocuments(const std::string &raw_query) const;
+    std::vector<Document> FindTopDocuments(const std::string_view raw_query) const;
 
     int GetDocumentCount() const;
 
