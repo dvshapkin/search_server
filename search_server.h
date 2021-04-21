@@ -41,6 +41,11 @@ public:
     {
     }
 
+    explicit SearchServer(const std::string &stop_words_text)
+            : SearchServer(std::string_view(stop_words_text))  // Invoke delegating constructor
+    {
+    }
+
     void
     AddDocument(int document_id, const std::string_view document, DocumentStatus status, const std::vector<int> &ratings);
 
@@ -72,20 +77,20 @@ public:
 
     int GetDocumentCount() const;
 
-    std::tuple<std::vector<std::string>, DocumentStatus>
+    std::tuple<std::vector<std::string_view>, DocumentStatus>
     MatchDocument(const std::string_view raw_query, int document_id) const;
 
-    std::tuple<std::vector<std::string>, DocumentStatus>
+    std::tuple<std::vector<std::string_view>, DocumentStatus>
     MatchDocument(const std::execution::sequenced_policy &policy, const std::string_view raw_query, int document_id) const;
 
-    std::tuple<std::vector<std::string>, DocumentStatus>
+    std::tuple<std::vector<std::string_view>, DocumentStatus>
     MatchDocument(const std::execution::parallel_policy &policy, const std::string_view raw_query, int document_id) const;
 
     SearchServer::const_iterator begin() const;
 
     SearchServer::const_iterator end() const;
 
-    const std::map<std::string, double> &GetWordFrequencies(int document_id) const;
+    const std::map<const std::string_view, double> GetWordFrequencies(int document_id) const;
 
     void RemoveDocument(int document_id);
 
@@ -95,7 +100,7 @@ public:
 
 private:
     const std::set<std::string> stop_words_;
-    std::map<int, std::map<std::string, double>> document_to_word_freqs_;
+    std::map<int, std::map<std::string, double, std::less<>>> document_to_word_freqs_;
     std::map<int, DocumentData> documents_;
     std::set<int> document_ids_;
 

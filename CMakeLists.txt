@@ -3,6 +3,8 @@ project(search_server)
 
 set(CMAKE_CXX_STANDARD 17)
 
+#add_compile_options(-Werrors)
+
 add_executable(search_server
     main.cpp
     read_input_functions.h read_input_functions.cpp

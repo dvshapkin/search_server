@@ -1,7 +1,7 @@
 #include "search_server.h"
 #include "request_queue.h"
 #include "test_example_functions.h"
-#include "remove_duplicates.h"
+//#include "remove_duplicates.h"
 #include "paginator.h"
 #include "process_queries.h"
 
@@ -13,7 +13,7 @@
 using namespace std;
 
 void Test1() {
-    SearchServer search_server(std::string_view ("and with"s));
+    SearchServer search_server("and with"s);
 
     AddDocument(search_server, 1, "funny pet and nasty rat"s, DocumentStatus::ACTUAL, {7, 2, 7});
     AddDocument(search_server, 2, "funny pet with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
@@ -39,13 +39,13 @@ void Test1() {
     // слова из разных документов, не является дубликатом
     AddDocument(search_server, 9, "nasty rat with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
 
-    cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << endl;
-    RemoveDuplicates(search_server);
-    cout << "After duplicates removed: "s << search_server.GetDocumentCount() << endl;
+//    cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << endl;
+//    RemoveDuplicates(search_server);
+//    cout << "After duplicates removed: "s << search_server.GetDocumentCount() << endl;
 }
 
 void Test2() {
-    SearchServer search_server(std::string_view ("and with"s));
+    SearchServer search_server("and with"s);
 
     int id = 0;
     for (
@@ -74,7 +74,7 @@ void Test2() {
 }
 
 void Test3() {
-    SearchServer search_server(std::string_view ("and with"s));
+    SearchServer search_server("and with"s);
 
     int id = 0;
     for (
@@ -100,7 +100,7 @@ void Test3() {
 }
 
 void Test4() {
-    SearchServer search_server(std::string_view ("and with"s));
+    SearchServer search_server("and with"s);
 
     int id = 0;
     for (
@@ -136,7 +136,7 @@ void Test4() {
 }
 
 void Test5() {
-    SearchServer search_server(std::string_view ("and with"s));
+    SearchServer search_server("and with"s);
 
     int id = 0;
     for (
