@@ -59,6 +59,37 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
     return {matched_words, documents_.at(document_id).status};
 }
 
+std::tuple<std::vector<std::string>, DocumentStatus>
+SearchServer::MatchDocument(const std::execution::sequenced_policy &policy, const std::string &raw_query, int document_id) const {
+    MatchDocument(raw_query, document_id);
+}
+
+std::tuple<std::vector<std::string>, DocumentStatus>
+SearchServer::MatchDocument(const std::execution::parallel_policy &policy, const std::string &raw_query, int document_id) const {
+    const auto query = ParseQuery(raw_query);
+
+    vector<string> matched_words;
+
+    for (const string& word : query.plus_words) {
+        if (document_to_word_freqs_.count(document_id) == 0) {
+            continue;
+        }
+        if (document_to_word_freqs_.at(document_id).count(word)) {
+            matched_words.push_back(word);
+        }
+    }
+    for (const string& word : query.minus_words) {
+        if (document_to_word_freqs_.count(document_id) == 0) {
+            continue;
+        }
+        if (document_to_word_freqs_.at(document_id).count(word)) {
+            matched_words.clear();
+            break;
+        }
+    }
+    return {matched_words, documents_.at(document_id).status};
+}
+
 SearchServer::const_iterator SearchServer::begin() const {
     return document_ids_.begin();
 }
