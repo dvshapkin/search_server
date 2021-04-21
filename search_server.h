@@ -36,9 +36,8 @@ public:
         }
     }
 
-    explicit SearchServer(const std::string &stop_words_text)
+    explicit SearchServer(const std::string_view stop_words_text)
             : SearchServer(SplitIntoWords(stop_words_text))  // Invoke delegating constructor
-    // from string container
     {
     }
 
@@ -104,14 +103,14 @@ private:
         return stop_words_.count(word) > 0;
     }
 
-    static bool IsValidWord(const std::string &word, ) {
+    static bool IsValidWord(const std::string &word) {
         // A valid word must not contain special characters
         return none_of(word.begin(), word.end(), [](char c) {
             return c >= '\0' && c < ' ';
         });
     }
 
-    std::vector<std::string> SplitIntoWordsNoStop(const std::string &text) const {
+    std::vector<std::string> SplitIntoWordsNoStop(const std::string_view text) const {
         std::vector<std::string> words;
         for (const std::string &word : SplitIntoWords(text)) {
             if (!IsValidWord(word)) {
@@ -160,7 +159,7 @@ private:
         std::set<std::string> minus_words;
     };
 
-    Query ParseQuery(const std::string &text) const {
+    Query ParseQuery(const std::string_view text) const {
         Query result;
         for (const std::string &word : SplitIntoWords(text)) {
             const auto query_word = ParseQueryWord(word);
