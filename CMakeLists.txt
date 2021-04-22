@@ -12,7 +12,7 @@ add_executable(search_server
     document.h document.cpp
         search_server.h search_server.cpp
         request_queue.h request_queue.cpp
-    remove_duplicates.h remove_duplicates.cpp
+    #remove_duplicates.h remove_duplicates.cpp
     test_example_functions.h test_example_functions.cpp
     paginator.h
     log_duration.h process_queries.cpp process_queries.h)

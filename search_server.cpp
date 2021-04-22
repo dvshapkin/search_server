@@ -35,39 +35,61 @@ int SearchServer::GetDocumentCount() const {
 }
 
 std::tuple<std::vector<std::string_view>, DocumentStatus> SearchServer::MatchDocument(const std::string_view raw_query, int document_id) const {
-    const auto query = ParseQuery(raw_query);
-
-    vector<string_view> matched_words;
-
-    for (const string& word : query.minus_words) {
-        if (document_to_word_freqs_.count(document_id)) {
-            if (document_to_word_freqs_.at(document_id).count(word)) {
-                return {matched_words, documents_.at(document_id).status};
-            }
-        }
-    }
-
-    matched_words.reserve(query.plus_words.size());
-    for (const string& word : query.plus_words) {
-        if (document_to_word_freqs_.count(document_id)) {
-            if (document_to_word_freqs_.at(document_id).count(word)) {
-                matched_words.push_back(std::move(word));
-            }
-        }
-    }
-
-    return {matched_words, documents_.at(document_id).status};
+//    const auto query = ParseQuery(raw_query);
+//
+//    vector<string_view> matched_words;
+//
+//    for (const string& word : query.plus_words) {
+//        if (document_to_word_freqs_.count(document_id) == 0) {
+//            continue;
+//        }
+//        if (document_to_word_freqs_.at(document_id).count(word)) {
+//            matched_words.push_back(word);
+//        }
+//    }
+//    for (const string& word : query.minus_words) {
+//        if (document_to_word_freqs_.count(document_id) == 0) {
+//            continue;
+//        }
+//        if (document_to_word_freqs_.at(document_id).count(word)) {
+//            matched_words.clear();
+//            break;
+//        }
+//    }
+//    return {matched_words, documents_.at(document_id).status};
+    return MatchDocument(std::execution::seq, raw_query, document_id);
 }
 
-std::tuple<std::vector<std::string_view>, DocumentStatus>
-SearchServer::MatchDocument(const std::execution::sequenced_policy &policy, const std::string_view raw_query, int document_id) const {
-    return MatchDocument(raw_query, document_id);
-}
+//std::tuple<std::vector<std::string_view>, DocumentStatus>
+//SearchServer::MatchDocument(const std::execution::sequenced_policy &policy, const std::string_view raw_query, int document_id) const {
+//    return MatchDocument(raw_query, document_id);
+//}
 
-std::tuple<std::vector<std::string_view>, DocumentStatus>
-SearchServer::MatchDocument(const std::execution::parallel_policy &policy, const std::string_view raw_query, int document_id) const {
-    return MatchDocument(raw_query, document_id);
-}
+//template<typename ExecutionPolicy>
+//std::tuple<std::vector<std::string_view>, DocumentStatus>
+////SearchServer::MatchDocument(const std::execution::parallel_policy &policy, const std::string_view raw_query, int document_id) const {
+//SearchServer::MatchDocument(ExecutionPolicy&& policy, const std::string_view raw_query, int document_id) const {
+//    const auto query = ParseQuery(raw_query);
+//
+//    vector<string_view> matched_words;
+//
+//    bool hase_minus_words = std::any_of(policy, query.minus_words.cbegin(), query.minus_words.cend(), [&](const auto& word){
+//        return document_to_word_freqs_.count(document_id) && document_to_word_freqs_.at(document_id).count(word);
+//    });
+//    if (hase_minus_words) {
+//        return {matched_words, documents_.at(document_id).status};
+//    }
+//
+//    std::for_each(policy, query.plus_words.cbegin(), query.plus_words.cend(), [&](const auto& word){
+//        if (document_to_word_freqs_.count(document_id)) {
+//            if (document_to_word_freqs_.at(document_id).count(word)) {
+//                matched_words.push_back(word);
+//            }
+//        }
+//    });
+//
+//    return {matched_words, documents_.at(document_id).status};
+//}
 
 SearchServer::const_iterator SearchServer::begin() const {
     return document_ids_.begin();
@@ -78,10 +100,10 @@ SearchServer::const_iterator SearchServer::end() const {
 }
 
 const std::map<const std::string_view, double> SearchServer::GetWordFrequencies(int document_id) const {
+    //return document_to_word_freqs_.at(document_id);
     std::map<const std::string_view, double> result;
     for (const auto& item: document_to_word_freqs_.at(document_id)) {
-        const std::string_view sv { item.first };
-        result[sv] = item.second;
+        result[item.first] = item.second;
     }
     return result;
 }
@@ -98,7 +120,6 @@ void SearchServer::RemoveDocument(const std::execution::sequenced_policy &policy
 
 void SearchServer::RemoveDocument(const std::execution::parallel_policy &policy, int document_id) {
     RemoveDocument(document_id);
-
 //    // Удаление из document_ids_
 //    {
 //        std::vector<int> v(document_ids_.size());

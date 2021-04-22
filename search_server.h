@@ -80,11 +80,35 @@ public:
     std::tuple<std::vector<std::string_view>, DocumentStatus>
     MatchDocument(const std::string_view raw_query, int document_id) const;
 
-    std::tuple<std::vector<std::string_view>, DocumentStatus>
-    MatchDocument(const std::execution::sequenced_policy &policy, const std::string_view raw_query, int document_id) const;
+//    std::tuple<std::vector<std::string_view>, DocumentStatus>
+//    MatchDocument(const std::execution::sequenced_policy &policy, const std::string_view raw_query, int document_id) const;
 
+//    std::tuple<std::vector<std::string_view>, DocumentStatus>
+//    MatchDocument(const std::execution::parallel_policy &policy, const std::string_view raw_query, int document_id) const;
+    template<typename ExecutionPolicy>
     std::tuple<std::vector<std::string_view>, DocumentStatus>
-    MatchDocument(const std::execution::parallel_policy &policy, const std::string_view raw_query, int document_id) const;
+    MatchDocument(ExecutionPolicy&& policy, const std::string_view raw_query, int document_id) const {
+        const auto query = ParseQuery(raw_query);
+
+        std::vector<std::string_view> matched_words;
+
+        bool hase_minus_words = std::any_of(policy, query.minus_words.cbegin(), query.minus_words.cend(), [&](const auto& word){
+            return document_to_word_freqs_.count(document_id) && document_to_word_freqs_.at(document_id).count(word);
+        });
+        if (hase_minus_words) {
+            return {matched_words, documents_.at(document_id).status};
+        }
+
+        std::for_each(policy, query.plus_words.cbegin(), query.plus_words.cend(), [&](const auto& word){
+            if (document_to_word_freqs_.count(document_id)) {
+                if (document_to_word_freqs_.at(document_id).count(word)) {
+                    matched_words.push_back(word);
+                }
+            }
+        });
+
+        return {matched_words, documents_.at(document_id).status};
+    }
 
     SearchServer::const_iterator begin() const;
 
@@ -176,6 +200,17 @@ private:
                 }
             }
         }
+//        const auto words = SplitIntoWords(text);
+//        std::for_each(policy, words.cbegin(), words.cend(), [&](const auto& word){
+//            const auto query_word = ParseQueryWord(word);
+//            if (!query_word.is_stop) {
+//                if (query_word.is_minus) {
+//                    result.minus_words.insert(std::move(query_word.data));
+//                } else {
+//                    result.plus_words.insert(std::move(query_word.data));
+//                }
+//            }
+//        });
         return result;
     }
 
