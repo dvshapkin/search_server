@@ -47,7 +47,8 @@ public:
     }
 
     void
-    AddDocument(int document_id, const std::string_view document, DocumentStatus status, const std::vector<int> &ratings);
+    AddDocument(int document_id, const std::string_view document, DocumentStatus status,
+                const std::vector<int> &ratings);
 
     template<typename DocumentPredicate>
     std::vector<Document>
@@ -87,19 +88,21 @@ public:
 //    MatchDocument(const std::execution::parallel_policy &policy, const std::string_view raw_query, int document_id) const;
     template<typename ExecutionPolicy>
     std::tuple<std::vector<std::string_view>, DocumentStatus>
-    MatchDocument(ExecutionPolicy&& policy, const std::string_view raw_query, int document_id) const {
+    MatchDocument(ExecutionPolicy &&policy, const std::string_view raw_query, int document_id) const {
         const auto query = ParseQuery(raw_query);
 
         std::vector<std::string_view> matched_words;
 
-        bool hase_minus_words = std::any_of(policy, query.minus_words.cbegin(), query.minus_words.cend(), [&](const auto& word){
-            return document_to_word_freqs_.count(document_id) && document_to_word_freqs_.at(document_id).count(word);
-        });
+        bool hase_minus_words = std::any_of(policy, query.minus_words.cbegin(), query.minus_words.cend(),
+                                            [&](const auto &word) {
+                                                return document_to_word_freqs_.count(document_id) &&
+                                                       document_to_word_freqs_.at(document_id).count(word);
+                                            });
         if (hase_minus_words) {
             return {matched_words, documents_.at(document_id).status};
         }
 
-        std::for_each(policy, query.plus_words.cbegin(), query.plus_words.cend(), [&](const auto& word){
+        std::for_each(policy, query.plus_words.cbegin(), query.plus_words.cend(), [&](const auto &word) {
             if (document_to_word_freqs_.count(document_id)) {
                 if (document_to_word_freqs_.at(document_id).count(word)) {
                     matched_words.push_back(word);
@@ -123,30 +126,30 @@ public:
     void RemoveDocument(const std::execution::parallel_policy &policy, int document_id);
 
 private:
-    const std::set<std::string> stop_words_;
-    std::map<int, std::map<std::string, double, std::less<>>> document_to_word_freqs_;
+    const std::set<std::string, std::less<>> stop_words_;
+    std::map<int, std::map<std::string, double>> document_to_word_freqs_;
     std::map<int, DocumentData> documents_;
     std::set<int> document_ids_;
 
-    bool IsStopWord(const std::string &word) const {
+    bool IsStopWord(const std::string_view &word) const {
         return stop_words_.count(word) > 0;
     }
 
-    static bool IsValidWord(const std::string &word) {
+    static bool IsValidWord(const std::string_view &word) {
         // A valid word must not contain special characters
-        return none_of(word.begin(), word.end(), [](char c) {
+        return std::none_of(word.begin(), word.end(), [](char c) {
             return c >= '\0' && c < ' ';
         });
     }
 
-    std::vector<std::string> SplitIntoWordsNoStop(const std::string_view text) const {
-        std::vector<std::string> words;
-        for (const std::string &word : SplitIntoWords(text)) {
+    std::vector<std::string_view> SplitIntoWordsNoStop(const std::string_view text) const {
+        std::vector<std::string_view> words;
+        for (const std::string_view &word : SplitIntoWords(text)) {
             if (!IsValidWord(word)) {
-                throw std::invalid_argument("Word "s + word + " is invalid"s);
+                throw std::invalid_argument("Word "s + std::string{word} + " is invalid"s);
             }
             if (!IsStopWord(word)) {
-                words.push_back(std::move(word));
+                words.push_back(word);
             }
         }
         return words;
@@ -166,21 +169,21 @@ private:
         bool is_stop;
     };
 
-    QueryWord ParseQueryWord(const std::string &text) const {
+    QueryWord ParseQueryWord(const std::string_view &text) const {
         if (text.empty()) {
             throw std::invalid_argument("Query word is empty"s);
         }
-        std::string word = text;
+        std::string_view word = text;
         bool is_minus = false;
         if (word[0] == '-') {
             is_minus = true;
             word = word.substr(1);
         }
         if (word.empty() || word[0] == '-' || !IsValidWord(word)) {
-            throw std::invalid_argument("Query word "s + text + " is invalid");
+            throw std::invalid_argument("Query word "s + std::string{text} + " is invalid");
         }
 
-        return {std::move(word), is_minus, IsStopWord(word)};
+        return {std::string{word}, is_minus, IsStopWord(word)};
     }
 
     struct Query {
@@ -190,18 +193,7 @@ private:
 
     Query ParseQuery(const std::string_view text) const {
         Query result;
-        for (const std::string &word : SplitIntoWords(text)) {
-            const auto query_word = ParseQueryWord(word);
-            if (!query_word.is_stop) {
-                if (query_word.is_minus) {
-                    result.minus_words.insert(std::move(query_word.data));
-                } else {
-                    result.plus_words.insert(std::move(query_word.data));
-                }
-            }
-        }
-//        const auto words = SplitIntoWords(text);
-//        std::for_each(policy, words.cbegin(), words.cend(), [&](const auto& word){
+//        for (const std::string_view &word : SplitIntoWords(text)) {
 //            const auto query_word = ParseQueryWord(word);
 //            if (!query_word.is_stop) {
 //                if (query_word.is_minus) {
@@ -210,7 +202,18 @@ private:
 //                    result.plus_words.insert(std::move(query_word.data));
 //                }
 //            }
-//        });
+//        }
+        const auto words = SplitIntoWords(text);
+        std::for_each(words.cbegin(), words.cend(), [&](const auto& word){
+            const auto query_word = ParseQueryWord(word);
+            if (!query_word.is_stop) {
+                if (query_word.is_minus) {
+                    result.minus_words.insert(std::move(query_word.data));
+                } else {
+                    result.plus_words.insert(std::move(query_word.data));
+                }
+            }
+        });
         return result;
     }
 
@@ -227,11 +230,23 @@ private:
 
     template<typename DocumentPredicate>
     std::vector<Document> FindAllDocuments(const Query &query, const DocumentPredicate &document_predicate) const {
+
+        // Сформируем множество документов, содержащих минус слова
+        std::set<int> docs_with_minus_words;
+        for (const std::string &word : query.minus_words) {
+            for (const auto&[document_id, word_freqs] : document_to_word_freqs_) {
+                if (word_freqs.count(word) == 0) {
+                    continue;
+                }
+                docs_with_minus_words.insert(document_id);
+            }
+        }
+
         std::map<int, double> document_to_relevance;
         for (const std::string &word : query.plus_words) {
             const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
             for (const auto&[document_id, word_freqs] : document_to_word_freqs_) {
-                if (word_freqs.count(word) == 0) {
+                if (docs_with_minus_words.count(document_id) || word_freqs.count(word) == 0) {
                     continue;
                 }
                 const auto &document_data = documents_.at(document_id);
@@ -244,14 +259,14 @@ private:
             }
         }
 
-        for (const std::string &word : query.minus_words) {
-            for (const auto&[document_id, word_freqs] : document_to_word_freqs_) {
-                if (word_freqs.count(word) == 0) {
-                    continue;
-                }
-                document_to_relevance.erase(document_id);
-            }
-        }
+//        for (const std::string &word : query.minus_words) {
+//            for (const auto&[document_id, word_freqs] : document_to_word_freqs_) {
+//                if (word_freqs.count(word) == 0) {
+//                    continue;
+//                }
+//                document_to_relevance.erase(document_id);
+//            }
+//        }
 
         std::vector<Document> matched_documents;
         for (const auto[document_id, relevance] : document_to_relevance) {

@@ -8,15 +8,18 @@ void SearchServer::AddDocument(int document_id, const std::string_view document,
     }
     const auto words = SplitIntoWordsNoStop(document);
 
-    const double inv_word_count = 1.0 / words.size();
-    for (const string& word : words) {
-        if (document_to_word_freqs_[document_id].count(word) == 0) {
-            document_to_word_freqs_[document_id][word] = 0;
-        }
-        document_to_word_freqs_[document_id][word] += inv_word_count;
-    }
-    documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
+    if (words.size() == 0) return;
 
+    const double inv_word_count = 1.0 / words.size();
+    for (const string_view word : words) {
+        std::string str_word{word};
+        if (document_to_word_freqs_[document_id].count(str_word) == 0) {
+            document_to_word_freqs_[document_id][str_word] = 0;
+        }
+        document_to_word_freqs_[document_id][str_word] += inv_word_count;
+    }
+
+    documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
     document_ids_.insert(document_id);
 }
 

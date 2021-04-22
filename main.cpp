@@ -1,7 +1,7 @@
 #include "search_server.h"
 #include "request_queue.h"
 #include "test_example_functions.h"
-//#include "remove_duplicates.h"
+#include "remove_duplicates.h"
 #include "paginator.h"
 #include "process_queries.h"
 
@@ -10,7 +10,24 @@
 #include <vector>
 #include <execution>
 
+#include "test_parallel_work.h"
+
 using namespace std;
+
+void Test0() {
+    SearchServer search_server("and in on"s);
+    AddDocument(search_server, 0, ""s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 1, "in"s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 2, "fluffy"s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 3, "white cat and fancy collar"s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 4, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 5, "  soigne   dog expressive eyes  "s, DocumentStatus::ACTUAL, {7, 2, 7});
+    const string query = "fluffy soigne cat -tail"s;
+    for (auto now : search_server.FindTopDocuments(query)) {
+        cout << "{ document_id = " << now.id << ", relevance = "
+             << now.relevance << " }" << endl;
+    }
+}
 
 void Test1() {
     SearchServer search_server("and with"s);
@@ -39,9 +56,9 @@ void Test1() {
     // слова из разных документов, не является дубликатом
     AddDocument(search_server, 9, "nasty rat with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
 
-//    cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << endl;
-//    RemoveDuplicates(search_server);
-//    cout << "After duplicates removed: "s << search_server.GetDocumentCount() << endl;
+    cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << endl;
+    RemoveDuplicates(search_server);
+    cout << "After duplicates removed: "s << search_server.GetDocumentCount() << endl;
 }
 
 void Test2() {
@@ -174,11 +191,14 @@ void Test5() {
 
 int main() {
 
+    Test0();
     Test1();
     Test2();
     Test3();
     Test4();
     Test5();
+
+    //TestParallelWork();
 
     return 0;
 }
