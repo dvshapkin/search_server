@@ -10,6 +10,8 @@
 #include <vector>
 #include <execution>
 
+#include "test_parallel_work.h"
+
 using namespace std;
 
 void Test0() {
@@ -195,11 +197,13 @@ void Test5() {
 int main() {
 
     Test0();
-//    Test1();
-//    Test2();
-//    Test3();
-//    Test4();
-//    Test5();
+    Test1();
+    Test2();
+    Test3();
+    Test4();
+    Test5();
+
+    //TestParallelWork();
 
     return 0;
 }
