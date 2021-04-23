@@ -125,7 +125,7 @@ public:
 
 private:
     const std::set<std::string, std::less<>> stop_words_;
-    std::map<int, std::map<std::string, double>> document_to_word_freqs_;
+    std::map<int, std::map<std::string, double, std::less<>>> document_to_word_freqs_;
     std::map<int, DocumentData> documents_;
     std::set<int> document_ids_;
 
@@ -162,7 +162,7 @@ private:
     }
 
     struct QueryWord {
-        std::string data;
+        std::string_view data;
         bool is_minus;
         bool is_stop;
     };
@@ -181,12 +181,13 @@ private:
             throw std::invalid_argument("Query word "s + std::string{text} + " is invalid");
         }
 
-        return {std::string{word}, is_minus, IsStopWord(word)};
+        //return {std::string{word}, is_minus, IsStopWord(word)};
+        return {word, is_minus, IsStopWord(word)};
     }
 
     struct Query {
-        std::set<std::string> plus_words;
-        std::set<std::string> minus_words;
+        std::set<std::string_view> plus_words;
+        std::set<std::string_view> minus_words;
     };
 
     Query ParseQuery(const std::string_view text) const {
@@ -206,9 +207,11 @@ private:
             const auto query_word = ParseQueryWord(word);
             if (!query_word.is_stop) {
                 if (query_word.is_minus) {
-                    result.minus_words.insert(std::move(query_word.data));
+                    //result.minus_words.insert(std::move(query_word.data));
+                    result.minus_words.insert(query_word.data);
                 } else {
-                    result.plus_words.insert(std::move(query_word.data));
+                    //result.plus_words.insert(std::move(query_word.data));
+                    result.plus_words.insert(query_word.data);
                 }
             }
         });
@@ -216,7 +219,7 @@ private:
     }
 
     // Existence required
-    double ComputeWordInverseDocumentFreq(const std::string &word) const {
+    double ComputeWordInverseDocumentFreq(const std::string_view &word) const {
         int doc_count = count_if(
                 document_to_word_freqs_.cbegin(),
                 document_to_word_freqs_.cend(),
@@ -231,7 +234,7 @@ private:
 
         // Сформируем множество документов, содержащих минус слова
         std::set<int> docs_with_minus_words;
-        for (const std::string &word : query.minus_words) {
+        for (const std::string_view &word : query.minus_words) {
             for (const auto&[document_id, word_freqs] : document_to_word_freqs_) {
                 if (word_freqs.count(word) == 0) {
                     continue;
@@ -241,7 +244,7 @@ private:
         }
 
         std::map<int, double> document_to_relevance;
-        for (const std::string &word : query.plus_words) {
+        for (const std::string_view &word : query.plus_words) {
             const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
             for (const auto&[document_id, word_freqs] : document_to_word_freqs_) {
                 if (docs_with_minus_words.count(document_id) || word_freqs.count(word) == 0) {
@@ -252,7 +255,7 @@ private:
                     if (document_to_relevance.count(document_id) == 0) {
                         document_to_relevance[document_id] = 0;
                     }
-                    document_to_relevance[document_id] += word_freqs.at(word) * inverse_document_freq;
+                    document_to_relevance[document_id] += word_freqs.at(std::string {word}) * inverse_document_freq;
                 }
             }
         }
