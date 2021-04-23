@@ -12,6 +12,26 @@
 
 using namespace std;
 
+void Test0() {
+    SearchServer search_server("and in on"s);
+    AddDocument(search_server, 0, ""s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 1, "in"s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 2, "fluffy"s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 3, "white cat and fancy collar"s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 4, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, {7, 2, 7});
+    AddDocument(search_server, 5, "  soigne   dog expressive eyes  "s, DocumentStatus::ACTUAL, {7, 2, 7});
+
+    const string query = "fluffy soigne cat -tail"s;
+    for (auto now : search_server.FindTopDocuments(query)) {
+        cout << "{ document_id = " << now.id << ", relevance = "
+             << now.relevance << " }" << endl;
+    }
+
+    const string query2 = "fluffy soigne cat -tail"s;
+    const auto [words, status] = search_server.MatchDocument(query2, 4);
+    cout << words.size() << " words for document 4"s << endl;
+}
+
 void Test1() {
     SearchServer search_server("and with"s);
 
@@ -174,11 +194,12 @@ void Test5() {
 
 int main() {
 
-    Test1();
-    Test2();
-    Test3();
-    Test4();
-    Test5();
+    Test0();
+//    Test1();
+//    Test2();
+//    Test3();
+//    Test4();
+//    Test5();
 
     return 0;
 }

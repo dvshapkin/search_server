@@ -104,7 +104,7 @@ private:
         return stop_words_.count(word) > 0;
     }
 
-    static bool IsValidWord(const std::string &word, ) {
+    static bool IsValidWord(const std::string &word) {
         // A valid word must not contain special characters
         return none_of(word.begin(), word.end(), [](char c) {
             return c >= '\0' && c < ' ';
