@@ -15,3 +15,8 @@ add_executable(search_server
         paginator.h
         log_duration.h process_queries.cpp process_queries.h
         test_parallel_work.h)
+
+if (UNIX)
+    target_link_libraries(search_server -ltbb -lpthread)
+endif ()
+
