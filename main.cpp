@@ -22,11 +22,16 @@ void Test0() {
     AddDocument(search_server, 3, "white cat and fancy collar"s, DocumentStatus::ACTUAL, {7, 2, 7});
     AddDocument(search_server, 4, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, {7, 2, 7});
     AddDocument(search_server, 5, "  soigne   dog expressive eyes  "s, DocumentStatus::ACTUAL, {7, 2, 7});
+
     const string query = "fluffy soigne cat -tail"s;
     for (auto now : search_server.FindTopDocuments(query)) {
         cout << "{ document_id = " << now.id << ", relevance = "
              << now.relevance << " }" << endl;
     }
+
+    const string query2 = "fluffy soigne cat -tail"s;
+    const auto [words, status] = search_server.MatchDocument(query2, 4);
+    cout << words.size() << " words for document 4"s << endl;
 }
 
 void Test1() {
@@ -192,11 +197,11 @@ void Test5() {
 int main() {
 
     Test0();
-    Test1();
-    Test2();
-    Test3();
-    Test4();
-    Test5();
+//    Test1();
+//    Test2();
+//    Test3();
+//    Test4();
+//    Test5();
 
     //TestParallelWork();
 
