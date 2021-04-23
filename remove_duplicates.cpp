@@ -8,7 +8,7 @@ template<typename StringKeyMap>
 set<string> GetKeySet(const StringKeyMap& m) {
     set<string> keys;
     for (const auto& item: m) {
-        keys.insert(item.first);
+        keys.insert({item.first.begin(), item.first.end()});
     }
     return keys;
 }
