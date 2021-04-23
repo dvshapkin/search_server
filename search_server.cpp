@@ -8,8 +8,6 @@ void SearchServer::AddDocument(int document_id, const std::string_view document,
     }
     const auto words = SplitIntoWordsNoStop(document);
 
-    if (words.size() == 0) return;
-
     const double inv_word_count = 1.0 / words.size();
     for (const string_view word : words) {
         std::string str_word{word};
