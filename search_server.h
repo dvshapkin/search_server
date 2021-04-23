@@ -98,17 +98,15 @@ public:
                                                 return document_to_word_freqs_.count(document_id) &&
                                                        document_to_word_freqs_.at(document_id).count(word);
                                             });
-        if (hase_minus_words) {
-            return {matched_words, documents_.at(document_id).status};
-        }
-
-        std::for_each(policy, query.plus_words.cbegin(), query.plus_words.cend(), [&](const auto &word) {
-            if (document_to_word_freqs_.count(document_id)) {
-                if (document_to_word_freqs_.at(document_id).count(word)) {
-                    matched_words.push_back(word);
+        if (!hase_minus_words) {
+            std::for_each(policy, query.plus_words.cbegin(), query.plus_words.cend(), [&](const auto &word) {
+                if (document_to_word_freqs_.count(document_id)) {
+                    if (document_to_word_freqs_.at(document_id).count(word)) {
+                        matched_words.push_back(word);
+                    }
                 }
-            }
-        });
+            });
+        }
 
         return {matched_words, documents_.at(document_id).status};
     }
