@@ -14,6 +14,13 @@
 
 using namespace std;
 
+void PrintDocument(const Document& document) {
+    cout << "{ "s
+         << "document_id = "s << document.id << ", "s
+         << "relevance = "s << document.relevance << ", "s
+         << "rating = "s << document.rating << " }"s << endl;
+}
+
 void Test0() {
     SearchServer search_server("and in on"s);
     AddDocument(search_server, 0, ""s, DocumentStatus::ACTUAL, {7, 2, 7});
@@ -194,6 +201,40 @@ void Test5() {
     }
 }
 
+void Test6() {
+    SearchServer search_server("and with"s);
+
+    for (
+            int id = 0;
+            const string& text : {
+            "white cat and yellow hat"s,
+            "curly cat curly tail"s,
+            "nasty dog with big eyes"s,
+            "nasty pigeon john"s,
+    }
+            ) {
+        search_server.AddDocument(++id, text, DocumentStatus::ACTUAL, {1, 2});
+    }
+
+    cout << "ACTUAL by default:"s << endl;
+    // последовательная версия
+    for (const Document& document : search_server.FindTopDocuments("curly nasty cat"s)) {
+        PrintDocument(document);
+    }
+    cout << "BANNED:"s << endl;
+    // последовательная версия
+    for (const Document& document : search_server.FindTopDocuments(execution::seq, "curly nasty cat"s, DocumentStatus::BANNED)) {
+        PrintDocument(document);
+    }
+
+    cout << "Even ids:"s << endl;
+    // параллельная версия
+    for (const Document& document : search_server.FindTopDocuments(execution::par, "curly nasty cat"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; })) {
+        PrintDocument(document);
+    }
+
+}
+
 int main() {
 
     Test0();
@@ -202,8 +243,7 @@ int main() {
     Test3();
     Test4();
     Test5();
-
-    //TestParallelWork();
+    Test6();
 
     return 0;
 }
