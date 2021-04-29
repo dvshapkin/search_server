@@ -50,12 +50,12 @@ public:
     AddDocument(int document_id, const std::string_view document, DocumentStatus status,
                 const std::vector<int> &ratings);
 
-    template<typename DocumentPredicate>
+    template<typename ExecutionPolicy, typename DocumentPredicate>
     std::vector<Document>
-    FindTopDocuments(const std::string_view raw_query, const DocumentPredicate &document_predicate) const {
+    FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query, const DocumentPredicate &document_predicate) const {
         const auto query = ParseQuery(raw_query);
 
-        auto matched_documents = FindAllDocuments(query, document_predicate);
+        auto matched_documents = FindAllDocuments(policy, query, document_predicate);
 
         std::sort(matched_documents.begin(), matched_documents.end(), [](const Document &lhs, const Document &rhs) {
             const double EPSILON = 1e-6;
@@ -72,7 +72,19 @@ public:
         return matched_documents;
     }
 
+    template<typename ExecutionPolicy>
+    std::vector<Document> FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query, const DocumentStatus &status) const {
+        return FindTopDocuments(policy, raw_query, [status](int, DocumentStatus document_status, int) {
+            return document_status == status;
+        });
+    }
+
     std::vector<Document> FindTopDocuments(const std::string_view raw_query, const DocumentStatus &status) const;
+
+    template<typename ExecutionPolicy>
+    std::vector<Document> FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query) const {
+        return FindTopDocuments(policy, raw_query, DocumentStatus::ACTUAL);
+    }
 
     std::vector<Document> FindTopDocuments(const std::string_view raw_query) const;
 
@@ -211,8 +223,8 @@ private:
         return std::log(GetDocumentCount() * 1.0 / doc_count);
     }
 
-    template<typename DocumentPredicate>
-    std::vector<Document> FindAllDocuments(const Query &query, const DocumentPredicate &document_predicate) const {
+    template<typename ExecutionPolicy, typename DocumentPredicate>
+    std::vector<Document> FindAllDocuments(ExecutionPolicy &&policy, const Query &query, const DocumentPredicate &document_predicate) const {
 
         // Сформируем множество документов, содержащих минус слова
         std::set<int> docs_with_minus_words;

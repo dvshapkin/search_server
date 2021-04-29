@@ -14,13 +14,6 @@
 
 using namespace std;
 
-void PrintDocument(const Document& document) {
-    cout << "{ "s
-         << "document_id = "s << document.id << ", "s
-         << "relevance = "s << document.relevance << ", "s
-         << "rating = "s << document.rating << " }"s << endl;
-}
-
 void Test0() {
     SearchServer search_server("and in on"s);
     AddDocument(search_server, 0, ""s, DocumentStatus::ACTUAL, {7, 2, 7});
@@ -37,7 +30,7 @@ void Test0() {
     }
 
     const string query2 = "fluffy soigne cat -tail"s;
-    const auto [words, status] = search_server.MatchDocument(query2, 4);
+    const auto[words, status] = search_server.MatchDocument(query2, 4);
     cout << words.size() << " words for document 4"s << endl;
 }
 
@@ -107,7 +100,7 @@ void Test3() {
 
     int id = 0;
     for (
-        const string& text : {
+        const string &text : {
             "funny pet and nasty rat"s,
             "funny pet with curly hair"s,
             "funny pet and not very nasty rat"s,
@@ -123,7 +116,7 @@ void Test3() {
             "not very funny nasty pet"s,
             "curly hair"s
     };
-    for (const Document& document : ProcessQueriesJoined(search_server, queries)) {
+    for (const Document &document : ProcessQueriesJoined(search_server, queries)) {
         cout << "Document "s << document.id << " matched with relevance "s << document.relevance << endl;
     }
 }
@@ -133,7 +126,7 @@ void Test4() {
 
     int id = 0;
     for (
-        const string& text : {
+        const string &text : {
             "funny pet and nasty rat"s,
             "funny pet with curly hair"s,
             "funny pet and not very nasty rat"s,
@@ -169,7 +162,7 @@ void Test5() {
 
     int id = 0;
     for (
-        const string& text : {
+        const string &text : {
             "funny pet and nasty rat"s,
             "funny pet with curly hair"s,
             "funny pet and not very nasty rat"s,
@@ -183,19 +176,19 @@ void Test5() {
     const string query = "curly and funny -not"s;
 
     {
-        const auto [words, status] = search_server.MatchDocument(query, 1);
+        const auto[words, status] = search_server.MatchDocument(query, 1);
         cout << words.size() << " words for document 1"s << endl;
         // 1 words for document 1
     }
 
     {
-        const auto [words, status] = search_server.MatchDocument(execution::seq, query, 2);
+        const auto[words, status] = search_server.MatchDocument(execution::seq, query, 2);
         cout << words.size() << " words for document 2"s << endl;
         // 2 words for document 2
     }
 
     {
-        const auto [words, status] = search_server.MatchDocument(execution::par, query, 3);
+        const auto[words, status] = search_server.MatchDocument(execution::par, query, 3);
         cout << words.size() << " words for document 3"s << endl;
         // 0 words for document 3
     }
@@ -204,9 +197,9 @@ void Test5() {
 void Test6() {
     SearchServer search_server("and with"s);
 
+    int id = 0;
     for (
-            int id = 0;
-            const string& text : {
+        const string &text : {
             "white cat and yellow hat"s,
             "curly cat curly tail"s,
             "nasty dog with big eyes"s,
@@ -218,18 +211,21 @@ void Test6() {
 
     cout << "ACTUAL by default:"s << endl;
     // последовательная версия
-    for (const Document& document : search_server.FindTopDocuments("curly nasty cat"s)) {
+    for (const Document &document : search_server.FindTopDocuments("curly nasty cat"s)) {
         PrintDocument(document);
     }
     cout << "BANNED:"s << endl;
     // последовательная версия
-    for (const Document& document : search_server.FindTopDocuments(execution::seq, "curly nasty cat"s, DocumentStatus::BANNED)) {
+    for (const Document &document : search_server.FindTopDocuments(execution::seq, "curly nasty cat"s,
+                                                                   DocumentStatus::BANNED)) {
         PrintDocument(document);
     }
 
     cout << "Even ids:"s << endl;
     // параллельная версия
-    for (const Document& document : search_server.FindTopDocuments(execution::par, "curly nasty cat"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; })) {
+    for (const Document &document : search_server.FindTopDocuments(execution::par, "curly nasty cat"s,
+                                                                   [](int document_id, DocumentStatus status,
+                                                                      int rating) { return document_id % 2 == 0; })) {
         PrintDocument(document);
     }
 
