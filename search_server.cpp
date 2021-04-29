@@ -22,13 +22,11 @@ void SearchServer::AddDocument(int document_id, const std::string_view document,
 }
 
 std::vector<Document> SearchServer::FindTopDocuments(const std::string_view raw_query, const DocumentStatus& status) const {
-    return FindTopDocuments(raw_query, [status](int, DocumentStatus document_status, int) {
-        return document_status == status;
-    });
+    return FindTopDocuments(std::execution::seq, raw_query, status);
 }
 
 std::vector<Document> SearchServer::FindTopDocuments(const std::string_view raw_query) const {
-    return FindTopDocuments(raw_query, DocumentStatus::ACTUAL);
+    return FindTopDocuments(std::execution::seq, raw_query);
 }
 
 int SearchServer::GetDocumentCount() const {
