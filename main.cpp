@@ -1,7 +1,7 @@
 #include "search_server.h"
 #include "request_queue.h"
 #include "test_example_functions.h"
-#include "remove_duplicates.h"
+//#include "remove_duplicates.h"
 #include "paginator.h"
 #include "process_queries.h"
 
@@ -61,9 +61,9 @@ void Test1() {
     // слова из разных документов, не является дубликатом
     AddDocument(search_server, 9, "nasty rat with curly hair"s, DocumentStatus::ACTUAL, {1, 2});
 
-    cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << endl;
-    RemoveDuplicates(search_server);
-    cout << "After duplicates removed: "s << search_server.GetDocumentCount() << endl;
+//    cout << "Before duplicates removed: "s << search_server.GetDocumentCount() << endl;
+//    RemoveDuplicates(search_server);
+//    cout << "After duplicates removed: "s << search_server.GetDocumentCount() << endl;
 }
 
 void Test2() {
@@ -240,6 +240,8 @@ int main() {
     Test4();
     Test5();
     Test6();
+
+    parallel_test();
 
     return 0;
 }
