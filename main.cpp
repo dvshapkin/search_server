@@ -23,7 +23,7 @@ void Test0() {
     AddDocument(search_server, 4, "fluffy cat fluffy tail"s, DocumentStatus::ACTUAL, {7, 2, 7});
     AddDocument(search_server, 5, "  soigne   dog expressive eyes  "s, DocumentStatus::ACTUAL, {7, 2, 7});
 
-    const string query = "fluffy soigne cat -tail"s;
+    const string query = "-fluffy -white soigne -cat -fancy -collar dog expressive eyes -tail"s;
     for (auto now : search_server.FindTopDocuments(query)) {
         cout << "{ document_id = " << now.id << ", relevance = "
              << now.relevance << " }" << endl;

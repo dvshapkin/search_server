@@ -13,7 +13,6 @@ void SearchServer::AddDocument(int document_id, const std::string_view document,
         const auto insert_result = words_.insert(std::string {word});
         const std::string_view word_view {*insert_result.first};
 
-        //std::string str_word{word};
         if (document_to_word_freqs_[document_id].count(word_view) == 0) {
             document_to_word_freqs_[document_id][word_view] = 0;
         }

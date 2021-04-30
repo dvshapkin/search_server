@@ -9,6 +9,8 @@
 #include <map>
 #include <set>
 #include <execution>
+#include <mutex>
+#include <type_traits>
 
 #include "read_input_functions.h"
 #include "document.h"
@@ -88,24 +90,7 @@ public:
     std::vector<Document>
     FindTopDocuments(const std::string_view raw_query,
                      const DocumentPredicate &document_predicate) const {
-        const auto query = ParseQuery(raw_query);
-
-        auto matched_documents = FindAllDocuments(std::execution::seq, query, document_predicate);
-
-        std::sort(matched_documents.begin(), matched_documents.end(), [](const Document &lhs, const Document &rhs) {
-            const double EPSILON = 1e-6;
-            if (std::abs(lhs.relevance - rhs.relevance) < EPSILON) {
-                return lhs.rating > rhs.rating;
-            } else {
-                return lhs.relevance > rhs.relevance;
-            }
-        });
-
-        if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
-            matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
-        }
-
-        return matched_documents;
+        return FindTopDocuments(std::execution::seq, raw_query, document_predicate);
     }
 
     template<typename ExecutionPolicy>
@@ -289,9 +274,26 @@ private:
         }
 
         std::vector<Document> matched_documents;
-        for (const auto[document_id, relevance] : document_to_relevance) {
-            matched_documents.push_back({ document_id, relevance, documents_.at(document_id).rating });
+        matched_documents.reserve(document_to_relevance.size());
+
+        if constexpr(std::is_same_v<ExecutionPolicy, std::execution::sequenced_policy>) {
+            for (const auto[document_id, relevance] : document_to_relevance) {
+                matched_documents.push_back({ document_id, relevance, documents_.at(document_id).rating });
+            }
+        } else {
+            std::mutex m;
+            auto &docs = documents_;
+            std::for_each(policy, document_to_relevance.cbegin(), document_to_relevance.cend(),
+                          [&matched_documents, &m, &docs](const auto &item) {
+                              m.lock();
+                              auto destination = &matched_documents.emplace_back();
+                              m.unlock();
+                              const auto document_id = item.first;
+                              const auto relevance = item.second;
+                              *destination = {document_id, relevance, docs.at(document_id).rating};
+                          });
         }
+
         return matched_documents;
     }
 };
