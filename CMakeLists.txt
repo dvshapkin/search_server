@@ -14,7 +14,7 @@ add_executable(search_server
         test_example_functions.h test_example_functions.cpp
         paginator.h
         log_duration.h process_queries.cpp process_queries.h
-        test_parallel_work.h concurent_map.h)
+        test_parallel_work.h concurrent_map.h)
 
 if (UNIX)
     target_link_libraries(search_server -ltbb -lpthread)
