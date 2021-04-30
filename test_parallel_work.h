@@ -79,6 +79,6 @@ void parallel_test() {
 
     const auto queries = GenerateQueries(generator, dictionary, 100, 70);
 
-    TEST(seq);
+    //TEST(seq);
     TEST(par);
 }

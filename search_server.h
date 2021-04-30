@@ -14,6 +14,8 @@
 #include "document.h"
 #include "string_processing.h"
 
+#include "log_duration.h"
+
 using namespace std::literals::string_literals;
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
@@ -52,19 +54,29 @@ public:
 
     template<typename ExecutionPolicy, typename DocumentPredicate>
     std::vector<Document>
-    FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query, const DocumentPredicate &document_predicate) const {
+    FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query,
+                     const DocumentPredicate &document_predicate) const {
         const auto query = ParseQuery(raw_query);
 
-        auto matched_documents = FindAllDocuments(policy, query, document_predicate);
+        std::vector<Document> matched_documents;
+        {
+            LOG_DURATION("find_all");
+            matched_documents = FindAllDocuments(policy, query, document_predicate);
+        }
+        //auto matched_documents = FindAllDocuments(policy, query, document_predicate);
 
-        std::sort(matched_documents.begin(), matched_documents.end(), [](const Document &lhs, const Document &rhs) {
-            const double EPSILON = 1e-6;
-            if (std::abs(lhs.relevance - rhs.relevance) < EPSILON) {
-                return lhs.rating > rhs.rating;
-            } else {
-                return lhs.relevance > rhs.relevance;
-            }
-        });
+        {
+            LOG_DURATION("sort");
+            std::sort(matched_documents.begin(), matched_documents.end(), [](const Document &lhs, const Document &rhs) {
+                const double EPSILON = 1e-6;
+                if (std::abs(lhs.relevance - rhs.relevance) < EPSILON) {
+                    return lhs.rating > rhs.rating;
+                } else {
+                    return lhs.relevance > rhs.relevance;
+                }
+            });
+        }
+
         if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
             matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
         }
@@ -73,7 +85,8 @@ public:
     }
 
     template<typename ExecutionPolicy>
-    std::vector<Document> FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query, const DocumentStatus &status) const {
+    std::vector<Document>
+    FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query, const DocumentStatus &status) const {
         return FindTopDocuments(policy, raw_query, [status](int, DocumentStatus document_status, int) {
             return document_status == status;
         });
@@ -199,7 +212,7 @@ private:
     Query ParseQuery(const std::string_view text) const {
         Query result;
         const auto words = SplitIntoWords(text);
-        std::for_each(words.cbegin(), words.cend(), [&](const auto& word){
+        std::for_each(words.cbegin(), words.cend(), [&](const auto &word) {
             const auto query_word = ParseQueryWord(word);
             if (!query_word.is_stop) {
                 if (query_word.is_minus) {
@@ -224,32 +237,23 @@ private:
     }
 
     template<typename ExecutionPolicy, typename DocumentPredicate>
-    std::vector<Document> FindAllDocuments(ExecutionPolicy &&policy, const Query &query, const DocumentPredicate &document_predicate) const {
-
-        // Сформируем множество документов, содержащих минус слова
-        std::set<int> docs_with_minus_words;
-        for (const std::string_view word : query.minus_words) {
-            for (const auto&[document_id, word_freqs] : document_to_word_freqs_) {
-                if (word_freqs.count(word) == 0) {
-                    continue;
-                }
-                docs_with_minus_words.insert(document_id);
-            }
-        }
+    std::vector<Document>
+    FindAllDocuments(ExecutionPolicy &&policy, const Query &query, const DocumentPredicate &document_predicate) const {
 
         std::map<int, double> document_to_relevance;
         for (const std::string_view word : query.plus_words) {
             const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
-            for (const auto&[document_id, word_freqs] : document_to_word_freqs_) {
-                if (docs_with_minus_words.count(document_id) || word_freqs.count(word) == 0) {
+            for (const auto &item : document_to_word_freqs_) {
+                const auto document_id = item.first;
+                const auto &word_freqs = item.second;
+                if (std::any_of(policy, query.minus_words.cbegin(), query.minus_words.cend(),
+                                [&word_freqs](const auto &word) { return word_freqs.count(word); })
+                    || word_freqs.count(word) == 0) {
                     continue;
                 }
                 const auto &document_data = documents_.at(document_id);
                 if (document_predicate(document_id, document_data.status, document_data.rating)) {
-                    if (document_to_relevance.count(document_id) == 0) {
-                        document_to_relevance[document_id] = 0;
-                    }
-                    document_to_relevance[document_id] += word_freqs.at(std::string {word}) * inverse_document_freq;
+                    document_to_relevance[document_id] += word_freqs.at(std::string{word}) * inverse_document_freq;
                 }
             }
         }
