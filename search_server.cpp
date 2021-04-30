@@ -10,11 +10,16 @@ void SearchServer::AddDocument(int document_id, const std::string_view document,
 
     const double inv_word_count = 1.0 / words.size();
     for (const string_view word : words) {
-        std::string str_word{word};
-        if (document_to_word_freqs_[document_id].count(word) == 0) {
-            document_to_word_freqs_[document_id][str_word] = 0;
+        const auto insert_result = words_.insert(std::string {word});
+        const std::string_view word_view {*insert_result.first};
+
+        //std::string str_word{word};
+        if (document_to_word_freqs_[document_id].count(word_view) == 0) {
+            document_to_word_freqs_[document_id][word_view] = 0;
         }
-        document_to_word_freqs_[document_id][str_word] += inv_word_count;
+        document_to_word_freqs_[document_id][word_view] += inv_word_count;
+
+        word_to_document_freqs_[word_view].insert(document_id);
     }
 
     documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
@@ -57,6 +62,12 @@ void SearchServer::RemoveDocument(int document_id) {
     document_ids_.erase(document_id);
     documents_.erase(document_id);
     document_to_word_freqs_.erase(document_id);
+
+    for (auto& item: word_to_document_freqs_) {
+        if (item.second.count(document_id)) {
+            item.second.erase(document_id);
+        }
+    }
 }
 
 void SearchServer::RemoveDocument(const std::execution::sequenced_policy &policy, int document_id) {
@@ -64,6 +75,5 @@ void SearchServer::RemoveDocument(const std::execution::sequenced_policy &policy
 }
 
 void SearchServer::RemoveDocument(const std::execution::parallel_policy &policy, int document_id) {
-    // В моем случае здесь нечего "параллелить"
     RemoveDocument(document_id);
 }
