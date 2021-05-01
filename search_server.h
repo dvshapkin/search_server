@@ -60,24 +60,16 @@ public:
                      const DocumentPredicate &document_predicate) const {
         const auto query = ParseQuery(raw_query);
 
-//        std::vector<Document> matched_documents;
-//        {
-//            LOG_DURATION("find_all");
-//            matched_documents = FindAllDocuments(policy, query, document_predicate);
-//        }
-        auto matched_documents = FindAllDocuments(policy, query, document_predicate);
+        auto matched_documents = FindAllDocuments(std::execution::seq, query, document_predicate);
 
-//        {
-//            LOG_DURATION("sort");
-            std::sort(matched_documents.begin(), matched_documents.end(), [](const Document &lhs, const Document &rhs) {
-                const double EPSILON = 1e-6;
-                if (std::abs(lhs.relevance - rhs.relevance) < EPSILON) {
-                    return lhs.rating > rhs.rating;
-                } else {
-                    return lhs.relevance > rhs.relevance;
-                }
-            });
-        //}
+        std::sort(matched_documents.begin(), matched_documents.end(), [](const Document &lhs, const Document &rhs) {
+            const double EPSILON = 1e-6;
+            if (std::abs(lhs.relevance - rhs.relevance) < EPSILON) {
+                return lhs.rating > rhs.rating;
+            } else {
+                return lhs.relevance > rhs.relevance;
+            }
+        });
 
         if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
             matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
@@ -240,19 +232,16 @@ private:
 
     // Existence required
     double ComputeWordInverseDocumentFreq(const std::string_view &word) const {
-//        int doc_count = count_if(
-//                document_to_word_freqs_.cbegin(),
-//                document_to_word_freqs_.cend(),
-//                [word](const auto item) {
-//                    return item.second.count(word) > 0;
-//                });
-//        return std::log(GetDocumentCount() * 1.0 / doc_count);
-        return std::log(GetDocumentCount() * 1.0 / word_to_document_freqs_.at(word).size());
+        int doc_count = 0;
+        if (word_to_document_freqs_.count(word)) {
+            doc_count = word_to_document_freqs_.at(word).size();
+        }
+        return std::log(GetDocumentCount() * 1.0 / doc_count);
     }
 
-    template<typename ExecutionPolicy, typename DocumentPredicate>
+    template<typename DocumentPredicate>
     std::vector<Document>
-    FindAllDocuments(ExecutionPolicy &&policy, const Query &query, const DocumentPredicate &document_predicate) const {
+    FindAllDocumentsSequenced(const Query &query, const DocumentPredicate &document_predicate) const {
 
         std::map<int, double> document_to_relevance;
 
@@ -261,7 +250,7 @@ private:
             for (const auto &item : document_to_word_freqs_) {
                 const auto document_id = item.first;
                 const auto &word_freqs = item.second;
-                if (std::any_of(policy, query.minus_words.cbegin(), query.minus_words.cend(),
+                if (std::any_of(query.minus_words.cbegin(), query.minus_words.cend(),
                                 [&word_freqs](const auto &word) { return word_freqs.count(word); })
                     || word_freqs.count(word) == 0) {
                     continue;
@@ -275,25 +264,74 @@ private:
 
         std::vector<Document> matched_documents;
         matched_documents.reserve(document_to_relevance.size());
-
-        if constexpr(std::is_same_v<ExecutionPolicy, std::execution::sequenced_policy>) {
-            for (const auto[document_id, relevance] : document_to_relevance) {
-                matched_documents.push_back({ document_id, relevance, documents_.at(document_id).rating });
-            }
-        } else {
-            std::mutex m;
-            auto &docs = documents_;
-            std::for_each(policy, document_to_relevance.cbegin(), document_to_relevance.cend(),
-                          [&matched_documents, &m, &docs](const auto &item) {
-                              m.lock();
-                              auto destination = &matched_documents.emplace_back();
-                              m.unlock();
-                              const auto document_id = item.first;
-                              const auto relevance = item.second;
-                              *destination = {document_id, relevance, docs.at(document_id).rating};
-                          });
+        for (const auto[document_id, relevance] : document_to_relevance) {
+            matched_documents.push_back({document_id, relevance, documents_.at(document_id).rating});
         }
 
         return matched_documents;
+    }
+
+    template<typename DocumentPredicate>
+    std::vector<Document>
+    FindAllDocumentsParallel(const Query &query, const DocumentPredicate &document_predicate) const {
+
+        // Найдем документы с минус-словами
+        std::set<int> docs_with_minus_word;
+        std::mutex m1;
+        auto begin = query.minus_words.cbegin();
+        auto end = query.minus_words.cend();
+        std::for_each(std::execution::par, document_to_word_freqs_.cbegin(), document_to_word_freqs_.cend(),
+                      [begin, end, &docs_with_minus_word, &m1](const auto &item) {
+                          const auto document_id = item.first;
+                          const auto &word_freqs = item.second;
+                          if (std::any_of(begin, end, [&word_freqs, document_id, &docs_with_minus_word](
+                                  const auto &word) { return word_freqs.count(word); })) {
+                              m1.lock();
+                              docs_with_minus_word.insert(document_id);
+                              m1.unlock();
+                          }
+                      });
+
+        std::map<int, double> document_to_relevance;
+        for (const std::string_view word : query.plus_words) {
+            const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
+            for (const auto &item : document_to_word_freqs_) {
+                const auto document_id = item.first;
+                const auto &word_freqs = item.second;
+                if (docs_with_minus_word.count(document_id) || word_freqs.count(word) == 0) {
+                    continue;
+                }
+                const auto &document_data = documents_.at(document_id);
+                if (document_predicate(document_id, document_data.status, document_data.rating)) {
+                    document_to_relevance[document_id] += word_freqs.at(word) * inverse_document_freq;
+                }
+            }
+        }
+
+        std::vector<Document> matched_documents;
+        matched_documents.reserve(document_to_relevance.size());
+        std::mutex m2;
+        auto &docs = documents_;
+        std::for_each(std::execution::par, document_to_relevance.cbegin(), document_to_relevance.cend(),
+                      [&matched_documents, &m2, &docs](const auto &item) {
+                          m2.lock();
+                          auto destination = &matched_documents.emplace_back();
+                          m2.unlock();
+                          const auto document_id = item.first;
+                          const auto relevance = item.second;
+                          *destination = {document_id, relevance, docs.at(document_id).rating};
+                      });
+
+        return matched_documents;
+    }
+
+    template<typename ExecutionPolicy, typename DocumentPredicate>
+    std::vector<Document>
+    FindAllDocuments(ExecutionPolicy &&, const Query &query, const DocumentPredicate &document_predicate) const {
+        if constexpr(std::is_same_v<ExecutionPolicy, std::execution::sequenced_policy>) {
+            return FindAllDocumentsSequenced(query, document_predicate);
+        } else {
+            return FindAllDocumentsParallel(query, document_predicate);
+        }
     }
 };
