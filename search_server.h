@@ -94,10 +94,12 @@ public:
         });
     }
 
-    [[nodiscard]] std::vector<Document> FindTopDocuments(std::string_view raw_query, const DocumentStatus &status) const;
+    [[nodiscard]] std::vector<Document>
+    FindTopDocuments(std::string_view raw_query, const DocumentStatus &status) const;
 
     template<typename ExecutionPolicy>
-    [[nodiscard]] std::vector<Document> FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query) const {
+    [[nodiscard]] std::vector<Document>
+    FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query) const {
         return FindTopDocuments(policy, raw_query, DocumentStatus::ACTUAL);
     }
 
@@ -293,26 +295,32 @@ private:
                           }
                       });
 
-        std::map<int, double> document_to_relevance;
-        for (const std::string_view word : query.plus_words) {
-            const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
-            for (const auto &item : document_to_word_freqs_) {
-                const auto document_id = item.first;
-                const auto &word_freqs = item.second;
-                if (docs_with_minus_word.count(document_id) || word_freqs.count(word) == 0) {
-                    continue;
-                }
-                const auto &document_data = documents_.at(document_id);
-                if (document_predicate(document_id, document_data.status, document_data.rating)) {
-                    document_to_relevance[document_id] += word_freqs.at(word) * inverse_document_freq;
-                }
-            }
+        std::unordered_map<std::string_view, double> inverse_document_freq;
+        for (const auto& word: query.plus_words) {
+            inverse_document_freq[word] = ComputeWordInverseDocumentFreq(word);
         }
 
+        ConcurrentMap<int, double> document_to_relevance_concurrent(8);
+        const auto &docs = documents_;
+        std::for_each(std::execution::par, document_to_word_freqs_.cbegin(), document_to_word_freqs_.cend(),
+                      [&docs_with_minus_word, &docs, &inverse_document_freq, document_predicate, &document_to_relevance_concurrent](const auto &item) {
+                          const auto document_id = item.first;
+                          const auto &word_freqs = item.second;
+                          if (docs_with_minus_word.count(document_id) == 0) {
+                              for (const auto& [word, inverse_freq]: inverse_document_freq) {
+                                  if (word_freqs.count(word) == 0) { continue; }
+                                  const auto &document_data = docs.at(document_id);
+                                  if (document_predicate(document_id, document_data.status, document_data.rating)) {
+                                      document_to_relevance_concurrent[document_id].ref_to_value += word_freqs.at(word) * inverse_freq;
+                                  }
+                              }
+                          }
+                      });
+
+        std::map<int, double> document_to_relevance = document_to_relevance_concurrent.BuildOrdinaryMap();
         std::vector<Document> matched_documents;
         matched_documents.reserve(document_to_relevance.size());
         std::mutex m2;
-        auto &docs = documents_;
         std::for_each(std::execution::par, document_to_relevance.cbegin(), document_to_relevance.cend(),
                       [&matched_documents, &m2, &docs](const auto &item) {
                           m2.lock();
