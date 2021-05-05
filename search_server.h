@@ -15,6 +15,7 @@
 #include "read_input_functions.h"
 #include "document.h"
 #include "string_processing.h"
+#include "concurrent_map.h"
 
 #include "log_duration.h"
 
@@ -51,7 +52,7 @@ public:
     }
 
     void
-    AddDocument(int document_id, const std::string_view document, DocumentStatus status,
+    AddDocument(int document_id, std::string_view document, DocumentStatus status,
                 const std::vector<int> &ratings);
 
     template<typename ExecutionPolicy, typename DocumentPredicate>
@@ -93,19 +94,19 @@ public:
         });
     }
 
-    std::vector<Document> FindTopDocuments(const std::string_view raw_query, const DocumentStatus &status) const;
+    [[nodiscard]] std::vector<Document> FindTopDocuments(std::string_view raw_query, const DocumentStatus &status) const;
 
     template<typename ExecutionPolicy>
-    std::vector<Document> FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query) const {
+    [[nodiscard]] std::vector<Document> FindTopDocuments(ExecutionPolicy &&policy, const std::string_view raw_query) const {
         return FindTopDocuments(policy, raw_query, DocumentStatus::ACTUAL);
     }
 
-    std::vector<Document> FindTopDocuments(const std::string_view raw_query) const;
+    [[nodiscard]] std::vector<Document> FindTopDocuments(std::string_view raw_query) const;
 
-    int GetDocumentCount() const;
+    [[nodiscard]] int GetDocumentCount() const;
 
-    std::tuple<std::vector<std::string_view>, DocumentStatus>
-    MatchDocument(const std::string_view raw_query, int document_id) const;
+    [[nodiscard]] std::tuple<std::vector<std::string_view>, DocumentStatus>
+    MatchDocument(std::string_view raw_query, int document_id) const;
 
     template<typename ExecutionPolicy>
     std::tuple<std::vector<std::string_view>, DocumentStatus>
@@ -132,11 +133,11 @@ public:
         return {matched_words, documents_.at(document_id).status};
     }
 
-    SearchServer::const_iterator begin() const;
+    [[nodiscard]] SearchServer::const_iterator begin() const;
 
-    SearchServer::const_iterator end() const;
+    [[nodiscard]] SearchServer::const_iterator end() const;
 
-    const std::map<const std::string_view, double> GetWordFrequencies(int document_id) const;
+    [[nodiscard]] const std::map<const std::string_view, double> GetWordFrequencies(int document_id) const;
 
     void RemoveDocument(int document_id);
 
@@ -154,7 +155,7 @@ private:
     std::set<int> document_ids_;
 
 
-    bool IsStopWord(const std::string_view &word) const {
+    [[nodiscard]] bool IsStopWord(const std::string_view &word) const {
         return stop_words_.count(word) > 0;
     }
 
@@ -165,7 +166,7 @@ private:
         });
     }
 
-    std::vector<std::string_view> SplitIntoWordsNoStop(const std::string_view text) const {
+    [[nodiscard]] std::vector<std::string_view> SplitIntoWordsNoStop(const std::string_view text) const {
         std::vector<std::string_view> words;
         for (const std::string_view &word : SplitIntoWords(text)) {
             if (!IsValidWord(word)) {
@@ -192,7 +193,7 @@ private:
         bool is_stop;
     };
 
-    QueryWord ParseQueryWord(const std::string_view &text) const {
+    [[nodiscard]] QueryWord ParseQueryWord(const std::string_view &text) const {
         if (text.empty()) {
             throw std::invalid_argument("Query word is empty"s);
         }
@@ -214,7 +215,7 @@ private:
         std::set<std::string_view> minus_words;
     };
 
-    Query ParseQuery(const std::string_view text) const {
+    [[nodiscard]] Query ParseQuery(const std::string_view text) const {
         Query result;
         const auto words = SplitIntoWords(text);
         std::for_each(words.cbegin(), words.cend(), [&](const auto &word) {
@@ -231,8 +232,8 @@ private:
     }
 
     // Existence required
-    double ComputeWordInverseDocumentFreq(const std::string_view &word) const {
-        int doc_count = 0;
+    [[nodiscard]] double ComputeWordInverseDocumentFreq(const std::string_view &word) const {
+        size_t doc_count = 0;
         if (word_to_document_freqs_.count(word)) {
             doc_count = word_to_document_freqs_.at(word).size();
         }
@@ -265,7 +266,7 @@ private:
         std::vector<Document> matched_documents;
         matched_documents.reserve(document_to_relevance.size());
         for (const auto[document_id, relevance] : document_to_relevance) {
-            matched_documents.push_back({document_id, relevance, documents_.at(document_id).rating});
+            matched_documents.emplace_back(document_id, relevance, documents_.at(document_id).rating);
         }
 
         return matched_documents;
